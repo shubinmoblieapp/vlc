@@ -218,8 +218,13 @@ int background_worker_Push( struct background_worker* worker, void* entity,
     item->timeout = timeout < 0 ? worker->conf.default_timeout : timeout;
 
     vlc_mutex_lock( &worker->lock );
-    vlc_array_append( &worker->tail.data, item );
+    bool b_appended = vlc_array_append( &worker->tail.data, item );
     vlc_cond_signal( &worker->tail.wait );
+    if( !b_appended )
+    {
+        free( item );
+        return VLC_EGENERIC;
+    }
 
     if( worker->head.active == false )
     {
